@@ -267,7 +267,7 @@ def nsga2(cities, items, capacity, min_speed, max_speed, renting_ratio, pop_size
     return population
 
 # Example usage
-filename = "./a280-n279.txt"  # Replace with your input file path
+filename = "./src/a280-n279.txt"  # Replace with your input file path
 cities, items, capacity, min_speed, max_speed, renting_ratio = load_problem(filename)
 result = nsga2(cities, items, capacity, min_speed, max_speed, renting_ratio, 100, 200)      #最后生成的200个解
 
@@ -314,29 +314,3 @@ def plot_pareto_front(fitness_values, fronts):
 # fronts = [[索引1, 索引2], [索引3, 索引4], ...]  # 帕累托排序结果
 
 plot_pareto_front(fitness_values, fronts)
-
-
-
-
-
-
-
-
-# def calculate_hypervolume(front, reference_point):
-#     # Sort the front by the first objective (ascending)
-#     front = sorted(front, key=lambda x: x[0])
-
-#     hv = 0.0
-#     prev_f1 = reference_point[0]
-#     for f1, f2 in front:
-#         width = prev_f1 - f1
-#         height = reference_point[1] - f2
-#         hv += width * height
-#         prev_f1 = f1
-
-#     return hv
-
-# Example Usage
-# reference_point = [5444.0, -0.0]  # Reference point
-# hypervolume = calculate_hypervolume(pareto_front, reference_point)
-# print("Hypervolume:", hypervolume)
