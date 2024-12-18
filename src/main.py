@@ -1,5 +1,5 @@
 import random
-
+#  // 1.应读取测试样例
 # 1. Initialize Population
 def initialize_population(pop_size, num_cities, num_items):
     population = []
@@ -62,15 +62,18 @@ def select_best(population, num_parents, distance_matrix, item_values):
 
 # 7. Main Function - Simplified NSGA-II Algorithm
 def nsga2_algorithm(num_generations, pop_size, num_cities, num_items, distance_matrix, item_values):
-    population = initialize_population(pop_size, num_cities, num_items)
+    population = initialize_population(pop_size, num_cities, num_items)  #//2.添加判断是否会超出背包最大重量限制（有无效解产生）
     for generation in range(num_generations):
-        parents = tournament_selection(population, distance_matrix, item_values)
-        offspring = crossover(parents)
-        offspring = [mutate(child) for child in offspring]
+        #// 4.NSGA算法实现 缺失  评估每一个解的质量[（总时间,总价值）,...] 因为是多目标问题
+        #// 5.NSGA算法实现 缺失  非支配排序缺失  帕累托缺失 缺失帕累托思想（多目标优化问题和单目标优化问题有区别）
+        #// 6.NSGA算法实现 缺失  拥挤距离计算缺失
+        parents = tournament_selection(population, distance_matrix, item_values) #// 7.要根据rank等级、拥挤距离和精英保留策略同时来选择父
+        offspring = crossover(parents) #// 8. 交叉要考虑交叉后路径是否变成无效解  背包重量是否会超重（多目标问题）
+        offspring = [mutate(child) for child in offspring] # 9. 突变考虑无效解问题  需要考虑突变概率，不能都进行突变 例：rate=0.1
 
         # Combine parents and offspring, and select the best individuals
         combined_population = parents + offspring
-        population = select_best(combined_population, pop_size, distance_matrix, item_values)
+        population = select_best(combined_population, pop_size, distance_matrix, item_values)  #// 10. 更新父代之前需要对combined_population进行帕累托排序 拥挤距离计算
 
         print(f"Generation {generation + 1}:")
         for individual in population:
@@ -96,8 +99,9 @@ distance_matrix = [
 ]
 
 # Example item values (values for each item in the backpack)
-item_values = [10, 20, 30]
+item_values = [10, 20, 30]    #// 3. item需要有重量和价值同时存在
 
 # Run the simplified NSGA-II algorithm
 population = nsga2_algorithm(num_generations, pop_size, num_cities, num_items, distance_matrix, item_values)
 
+#// 11.帕累托前沿可视化
