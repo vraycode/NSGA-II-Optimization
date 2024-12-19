@@ -1,17 +1,18 @@
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 from scipy.spatial import distance
 
 # Load the problem data
 def load_problem(filename):
     with open(filename, 'r') as file:
         data = file.readlines()
-    cities = []     #城市数组
-    items = []      #物品数组
-    capacity = 0        #背包容量
-    min_speed = 0       #最小速度
-    max_speed = 0       #最大速度
-    renting_ratio = 0       #目标间权衡参数
+    cities = []     # 城市数组
+    items = []      # 物品数组
+    capacity = 0        # 背包容量
+    min_speed = 0       # 最小速度
+    max_speed = 0       # 最大速度
+    renting_ratio = 0       # 目标间权衡参数
     for line in data:
         if line.startswith("CAPACITY OF KNAPSACK"):     #背包容量
             capacity = int(line.split(':')[-1])
@@ -92,19 +93,21 @@ def evaluate_solution(solution, cities, items, capacity, min_speed, max_speed, r
 
 
 # Non-dominated sorting     非支配排序
-def non_dominated_sorting(population, fitness_values):      # 先假设此函数逻辑实现正确////////////
+def non_dominated_sorting(population, fitness_values):
     fronts = []
-    domination_count = [0] * len(population)        #每个级别个数
-    dominated_solutions = [[] for _ in range(len(population))]      #每个级别具体对象
+    domination_count = [0] * len(population)  #记录每个解被支配的次数
+    dominated_solutions = [[] for _ in range(len(population))]      #记录每个解支配的其他解
 
-    for p in range(len(population)):
+    for p in range(len(population)):    #对比第一个
         for q in range(len(population)):
-            if (fitness_values[p][0] <= fitness_values[q][0] and fitness_values[p][1] >= fitness_values[q][1]) and (fitness_values[p][0] < fitness_values[q][0] or fitness_values[p][1] > fitness_values[q][1]):
-                dominated_solutions[p].append(q)
-            elif (fitness_values[q][0] <= fitness_values[p][0] and fitness_values[q][1] >= fitness_values[p][1]) and (fitness_values[q][0] < fitness_values[p][0] or fitness_values[q][1] > fitness_values[p][1]):
-                domination_count[p] += 1
+            if ((fitness_values[p][0] <= fitness_values[q][0] and fitness_values[p][1] > fitness_values[q][1]) or \
+            (fitness_values[p][0] < fitness_values[q][0] and fitness_values[p][1] >= fitness_values[q][1])):
+                dominated_solutions[p].append(q)    #p支配的解
+            elif ((fitness_values[q][0] <= fitness_values[p][0] and fitness_values[q][1] > fitness_values[p][1]) or \
+            (fitness_values[q][0] < fitness_values[p][0] and fitness_values[q][1] >= fitness_values[p][1])):
+                domination_count[p] += 1    #p被支配
 
-        if domination_count[p] == 0:
+        if domination_count[p] == 0:  #证明是rank0
             if len(fronts) == 0:
                 fronts.append([])
             fronts[0].append(p)
@@ -112,12 +115,11 @@ def non_dominated_sorting(population, fitness_values):      # 先假设此函数
     i = 0
     if len(fronts) == 0:  # 确保fronts有一个初始的非空层
         fronts.append([])  
-
     while i < len(fronts) and len(fronts[i]) > 0:  # 确保不会越界访问
         next_front = []
-        for p in fronts[i]:
-            for q in dominated_solutions[p]:
-                domination_count[q] -= 1
+        for p in fronts[i]:     #rank0
+            for q in dominated_solutions[p]:    #遍历p支配的解  如果rank0中有2个解同时支配了一个解
+                domination_count[q] -= 1    #这一次就是被p支配的一次
                 if domination_count[q] == 0:
                     next_front.append(q)
         if len(next_front) > 0:  # 避免添加空的层
@@ -235,8 +237,8 @@ def nsga2(cities, items, capacity, min_speed, max_speed, renting_ratio, pop_size
         # Generate offspring  生成子代 N个
         offspring = []
         while len(offspring) < pop_size:
-            parent1 = tournament_selection(population, fitness_values, ranks, crowding_distances, 2) #选择压力为2
-            parent2 = tournament_selection(population, fitness_values, ranks, crowding_distances, 2)
+            parent1 = tournament_selection(population, fitness_values, ranks, crowding_distances, 3) #选择压力为2
+            parent2 = tournament_selection(population, fitness_values, ranks, crowding_distances, 3)
             child = crossover(parent1, parent2, items, capacity)     #交叉 防止产生无效解的判断
             child = mutate(child, 0.1, items, capacity)      #突变  防止产生无效解的判断
             offspring.append(child)     #后代生成
@@ -267,19 +269,17 @@ def nsga2(cities, items, capacity, min_speed, max_speed, renting_ratio, pop_size
     return population
 
 # Example usage
-filename = "./src/a280-n279.txt"  # Replace with your input file path
+filename = "./a280-n279.txt"  # Replace with your input file path
 cities, items, capacity, min_speed, max_speed, renting_ratio = load_problem(filename)
 result = nsga2(cities, items, capacity, min_speed, max_speed, renting_ratio, 100, 200)      #最后生成的200个解
 
 fitness_values = [evaluate_solution(ind, cities, items, capacity, min_speed, max_speed, renting_ratio) for ind in result]       #100个解的质量[（总时间,总价值）,...]
 fronts = non_dominated_sorting(result, fitness_values)      #当前解集 非支配排序（帕累托排序）
 
-# pareto_front = []   #帕累托前沿rank0的解质量
-# for i in fronts[0]:
-#     pareto_front.append(fitness_values[i])
-# print(pareto_front)
-
-import matplotlib.pyplot as plt
+pareto_front = []   #帕累托前沿rank0的解质量
+for i in fronts[0]:
+    pareto_front.append(fitness_values[i])
+print(pareto_front)
 
 def plot_pareto_front(fitness_values, fronts):
     """
@@ -313,4 +313,31 @@ def plot_pareto_front(fitness_values, fronts):
 # fitness_values = [(cost1, profit1), (cost2, profit2), ...]
 # fronts = [[索引1, 索引2], [索引3, 索引4], ...]  # 帕累托排序结果
 
-plot_pareto_front(fitness_values, fronts)
+# plot_pareto_front(fitness_values, fronts)
+
+
+
+
+
+
+
+
+# def calculate_hypervolume(front, reference_point):
+#     # Sort the front by the first objective (ascending)
+#     front = sorted(front, key=lambda x: x[0])
+
+#     hv = 0.0
+#     prev_f1 = reference_point[0]
+#     for f1, f2 in front:
+#         width = prev_f1 - f1
+#         height = reference_point[1] - f2
+#         hv += width * height
+#         prev_f1 = f1
+
+#     return hv
+
+# Example Usage
+# reference_point = [5444.0, -0.0]  # Reference point
+# hypervolume = calculate_hypervolume(pareto_front, reference_point)
+# print("Hypervolume:", hypervolume)
+
