@@ -496,7 +496,7 @@ def plot_pareto_front(fitness_values, fronts):
 
 def main():
     # ========== 读取并解析 TTP 实例 (以 a280-TTP 为例) ==========
-    ttp_file = "./a280-n279.txt"
+    ttp_file = "./fnl4461-n22300.txt"
     (num_cities, num_items, capacity,
      v_min, v_max, renting_ratio, coords, items) = parse_ttp_instance(ttp_file)
 
@@ -507,8 +507,8 @@ def main():
     # 运行 NSGA-II
     final_pop, final_fits = nsga2_main(
         dist_matrix, items, capacity, v_min, v_max,
-        pop_size=300,  # 可调
-        n_gen=1000,    # 可调
+        pop_size=100,  # 可调
+        n_gen=100,    # 可调
         p_c=0.9,
         p_m=0.02
     )
